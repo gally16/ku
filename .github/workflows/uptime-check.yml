@@ -1,0 +1,34 @@
+name: Uptime Check
+
+于:
+  schedule:
+    # 这里的 cron 表达式代表每 2 小时执行一次
+    - cron: '0 */2 * * *'
+  workflow_dispatch: # 保留这个触发器，允许你在 GitHub 网页端手动点击运行测试
+
+jobs:
+  check-alive:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 测活网站
+        run: |
+          URL="https://gallygc-guma.hf.space/dashboard"
+          echo "开始探测网址: $URL"
+          
+          # 使用 curl 发送请求，-L 允许重定向，-s 静默模式，-w 获取 HTTP 状态码
+          STATUS_CODE=$(curl -L -k -o /dev/null -s -w "%{http_code}" "$URL")
+          echo "获取到的 HTTP 状态码: $STATUS_CODE"
+          
+          # 判断状态码是否正常 (2xx 或 3xx 通常表示正常，401/403 表示需要登录，也算存活)
+          if [ "$STATUS_CODE" -ge 200 ] && [ "$STATUS_CODE" -lt 400 ]; then
+            echo "✅ 网站访问正常，状态健康。"
+          elif [ "$STATUS_CODE" -eq 401 ] || [ "$STATUS_CODE" -eq 403 ]; then
+            echo "⚠️ 网站存活，但需要身份验证 (状态码: $STATUS_CODE)。"
+          elif [ "$STATUS_CODE" -eq 000 ]; then
+            echo "❌ 网站无法访问，可能已宕机 (状态码: $STATUS_CODE)。"
+            exit 1 # 抛出错误，触发 GitHub Actions 失败报警
+          else
+            echo "❌ 网站可能出现异常 (状态码: $STATUS_CODE)。"
+            exit 1 # 抛出错误，触发 GitHub Actions 失败报警
+          fi
