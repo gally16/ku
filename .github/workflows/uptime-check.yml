@@ -1,6 +1,6 @@
 name: Uptime Check
 
-于:
+on:
   schedule:
     # 这里的 cron 表达式代表每 2 小时执行一次
     - cron: '0 */2 * * *'
